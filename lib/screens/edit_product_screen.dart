@@ -12,36 +12,143 @@ class EditProductScreen extends StatefulWidget {
 
 class _EditProductScreenState extends State<EditProductScreen> {
   final _priceFocusNode = FocusNode();
+  final _descNode = FocusNode();
+  final _imageUrlController = TextEditingController();
+  final _imageFocus = FocusNode();
+  final _form = GlobalKey<FormState>();
+  var _editedProduct = Product(id: DateTime.now().toString(), title: "", description: "", price: 0.0, imageUrl: "");
+
+  @override
+  void initState() {
+    _imageFocus.addListener(_updateImageUrl);
+    super.initState();
+  }
+
+  void _updateImageUrl() {
+    if (!_imageFocus.hasFocus) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _priceFocusNode.dispose();
+    _descNode.dispose();
+    _imageUrlController.dispose();
+    _imageFocus.removeListener(_updateImageUrl);
+    _imageFocus.dispose();
+  }
+
+  void saveForm() {
+    _form.currentState?.save();
+  }
+
   @override
   Widget build(BuildContext context) {
     Product? product = ModalRoute.of(context)?.settings.arguments as Product?;
-    var isNew = product ==null;
-
+    var isNew = product == null;
+    if (!isNew) _imageUrlController.text = product.imageUrl;
     return Scaffold(
       appBar: AppBar(
-        title: Text(isNew?"Add produit":"Edit Produit ${product.title}"),
+        title: Text(isNew ? "Add produit" : "Edit Produit ${product.title}"),
+        actions: [IconButton(onPressed: () {
+          saveForm();
+        }, icon: const Icon(Icons.save))],
       ),
       body: Padding(
         padding: const EdgeInsets.all(60),
         child: Form(
+          key: _form,
           child: SingleChildScrollView(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 TextFormField(
-                  decoration: const InputDecoration(labelText: "Title",),
+                  decoration: const InputDecoration(
+                    labelText: "titre",
+                  ),
                   textInputAction: TextInputAction.next,
-                  initialValue: isNew ? "":product.title,
+                  initialValue: isNew ? "" : product.title,
+                  onFieldSubmitted: (_) {
+                    FocusScope.of(context).requestFocus(_priceFocusNode);
+                  },
+                  onSaved: (value){
+                    _editedProduct = Product(id: _editedProduct.id, title: value as String, description: _editedProduct.description, price: _editedProduct.price, imageUrl: _editedProduct.imageUrl);
+                  },
                 ),
                 TextFormField(
-                  decoration: const InputDecoration(labelText: "Title",),
-                  textInputAction: TextInputAction.next,
-                  initialValue: isNew ? "":product.price.toStringAsFixed(2),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    signed: false,
-                    decimal: true
+                  decoration: const InputDecoration(
+                    labelText: "price",
                   ),
+                  textInputAction: TextInputAction.next,
+                  initialValue: isNew ? "" : product.price.toStringAsFixed(2),
+                  keyboardType: const TextInputType.numberWithOptions(
+                      signed: false, decimal: true),
+                  focusNode: _priceFocusNode,
+                  onFieldSubmitted: (_) {
+                    FocusScope.of(context).requestFocus(_imageFocus);
+                  },
+                  onSaved: (value){
+                    _editedProduct = Product(id: _editedProduct.id, title: _editedProduct.title, description: _editedProduct.description, price: double.parse(value as String), imageUrl: _editedProduct.imageUrl);
+                  },
                 ),
-
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      margin: const EdgeInsets.only(top: 8, right: 10),
+                      decoration: BoxDecoration(
+                          border: Border.all(
+                              color: Theme.of(context).colorScheme.tertiary,
+                              width: 1)),
+                      child: FittedBox(
+                        child: Image.network(_imageUrlController.text.isEmpty
+                            ? "https://www.depiend.hu/images/missing.png"
+                            : _imageUrlController.text),
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+                    Expanded(
+                      child: TextFormField(
+                        maxLines: 4,
+                        focusNode: _imageFocus,
+                        controller: _imageUrlController,
+                        decoration:
+                            const InputDecoration(labelText: "image url"),
+                        keyboardType: TextInputType.url,
+                        textInputAction: TextInputAction.next,
+                        onEditingComplete: () {
+                          setState(() {});
+                        },
+                        onFieldSubmitted: (_) {
+                          FocusScope.of(context).requestFocus(_descNode);
+                        },
+                        onSaved: (value){
+                          _editedProduct = Product(id: _editedProduct.id, title: _editedProduct.title, description: _editedProduct.description, price: _editedProduct.price, imageUrl: value as String);
+                        },
+                      ),
+                    )
+                  ],
+                ),
+                TextFormField(
+                  decoration: const InputDecoration(
+                    labelText: "description",
+                  ),
+                  maxLines: 3,
+                  textInputAction: TextInputAction.next,
+                  keyboardType: TextInputType.multiline,
+                  initialValue: isNew ? "" : product.description,
+                  focusNode: _descNode,
+                  onFieldSubmitted: (_) {
+                    saveForm();
+                  },
+                  onSaved: (value){
+                    _editedProduct = Product(id: _editedProduct.id, title: _editedProduct.title, description: value as String, price: _editedProduct.price, imageUrl: _editedProduct.imageUrl);
+                  },
+                ),
               ],
             ),
           ),
