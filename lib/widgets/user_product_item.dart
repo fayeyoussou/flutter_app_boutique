@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shop_app/providers/product.dart';
+import 'package:shop_app/providers/products.dart';
 import 'package:shop_app/screens/edit_product_screen.dart';
 
 ///  Created by youssouphafaye on 10/9/22.
@@ -24,7 +26,9 @@ class UserProductItem extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
             ),
             IconButton(
-                onPressed: (){ },
+                onPressed: (){
+                  Provider.of<Products>(context,listen: false).deleteProduct(product.id);
+                },
                 icon: const Icon(Icons.delete),
               color: Theme.of(context).colorScheme.error,
             ),

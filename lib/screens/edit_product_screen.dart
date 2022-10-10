@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../providers/product.dart';
+import '../providers/products.dart';
 
 ///  Created by youssouphafaye on 10/9/22.
 class EditProductScreen extends StatefulWidget {
@@ -16,7 +18,14 @@ class _EditProductScreenState extends State<EditProductScreen> {
   final _imageUrlController = TextEditingController();
   final _imageFocus = FocusNode();
   final _form = GlobalKey<FormState>();
-  var _editedProduct = Product(id: DateTime.now().toString(), title: "", description: "", price: 0.0, imageUrl: "");
+  bool isNew = false;
+  bool added = false;
+  var _editedProduct = Product(
+      id: "",
+      title: "",
+      description: "",
+      price: 0.0,
+      imageUrl: "");
 
   @override
   void initState() {
@@ -41,20 +50,33 @@ class _EditProductScreenState extends State<EditProductScreen> {
   }
 
   void saveForm() {
+    final isValid = _form.currentState?.validate();
+    if(!isValid!) return;
     _form.currentState?.save();
+    var products = Provider.of<Products>(context,listen: false);
+    Navigator.of(context).pop();
+    isNew ? products.addProduct(_editedProduct):products.editProduct(_editedProduct);
   }
 
   @override
   Widget build(BuildContext context) {
     Product? product = ModalRoute.of(context)?.settings.arguments as Product?;
-    var isNew = product == null;
-    if (!isNew) _imageUrlController.text = product.imageUrl;
+    isNew = product == null;
+    if (!isNew && !added) {
+      added =true;
+      _editedProduct.id=product!.id;
+      _imageUrlController.text = product.imageUrl;
+    }
     return Scaffold(
       appBar: AppBar(
-        title: Text(isNew ? "Add produit" : "Edit Produit ${product.title}"),
-        actions: [IconButton(onPressed: () {
-          saveForm();
-        }, icon: const Icon(Icons.save))],
+        title: Text(isNew ? "Add produit" : "Edit Produit ${product!.title}"),
+        actions: [
+          IconButton(
+              onPressed: () {
+                saveForm();
+              },
+              icon: const Icon(Icons.save))
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(60),
@@ -69,28 +91,46 @@ class _EditProductScreenState extends State<EditProductScreen> {
                     labelText: "titre",
                   ),
                   textInputAction: TextInputAction.next,
-                  initialValue: isNew ? "" : product.title,
+                  initialValue: isNew ? "" : product!.title,
                   onFieldSubmitted: (_) {
                     FocusScope.of(context).requestFocus(_priceFocusNode);
                   },
-                  onSaved: (value){
-                    _editedProduct = Product(id: _editedProduct.id, title: value as String, description: _editedProduct.description, price: _editedProduct.price, imageUrl: _editedProduct.imageUrl);
+                  onSaved: (value) {
+                    _editedProduct = Product(
+                        id: _editedProduct.id,
+                        title: value as String,
+                        description: _editedProduct.description,
+                        price: _editedProduct.price,
+                        imageUrl: _editedProduct.imageUrl);
                   },
                 ),
                 TextFormField(
+                  validator: (value) {
+                    if (value == null) return "price can't be null";
+                    if (value.isEmpty) return "price can't be empty";
+                    if (double.tryParse(value) == null) {
+                      return "price have to be a decimal number";
+                    }
+                    return null;
+                  },
                   decoration: const InputDecoration(
                     labelText: "price",
                   ),
                   textInputAction: TextInputAction.next,
-                  initialValue: isNew ? "" : product.price.toStringAsFixed(2),
+                  initialValue: isNew ? "" : product!.price.toStringAsFixed(2),
                   keyboardType: const TextInputType.numberWithOptions(
                       signed: false, decimal: true),
                   focusNode: _priceFocusNode,
                   onFieldSubmitted: (_) {
                     FocusScope.of(context).requestFocus(_imageFocus);
                   },
-                  onSaved: (value){
-                    _editedProduct = Product(id: _editedProduct.id, title: _editedProduct.title, description: _editedProduct.description, price: double.parse(value as String), imageUrl: _editedProduct.imageUrl);
+                  onSaved: (value) {
+                    _editedProduct = Product(
+                        id: _editedProduct.id,
+                        title: _editedProduct.title,
+                        description: _editedProduct.description,
+                        price: double.parse(value as String),
+                        imageUrl: _editedProduct.imageUrl);
                   },
                 ),
                 Row(
@@ -126,8 +166,13 @@ class _EditProductScreenState extends State<EditProductScreen> {
                         onFieldSubmitted: (_) {
                           FocusScope.of(context).requestFocus(_descNode);
                         },
-                        onSaved: (value){
-                          _editedProduct = Product(id: _editedProduct.id, title: _editedProduct.title, description: _editedProduct.description, price: _editedProduct.price, imageUrl: value as String);
+                        onSaved: (value) {
+                          _editedProduct = Product(
+                              id: _editedProduct.id,
+                              title: _editedProduct.title,
+                              description: _editedProduct.description,
+                              price: _editedProduct.price,
+                              imageUrl: value as String);
                         },
                       ),
                     )
@@ -140,13 +185,18 @@ class _EditProductScreenState extends State<EditProductScreen> {
                   maxLines: 3,
                   textInputAction: TextInputAction.next,
                   keyboardType: TextInputType.multiline,
-                  initialValue: isNew ? "" : product.description,
+                  initialValue: isNew ? "" : product!.description,
                   focusNode: _descNode,
                   onFieldSubmitted: (_) {
                     saveForm();
                   },
-                  onSaved: (value){
-                    _editedProduct = Product(id: _editedProduct.id, title: _editedProduct.title, description: value as String, price: _editedProduct.price, imageUrl: _editedProduct.imageUrl);
+                  onSaved: (value) {
+                    _editedProduct = Product(
+                        id: _editedProduct.id,
+                        title: _editedProduct.title,
+                        description: value as String,
+                        price: _editedProduct.price,
+                        imageUrl: _editedProduct.imageUrl);
                   },
                 ),
               ],

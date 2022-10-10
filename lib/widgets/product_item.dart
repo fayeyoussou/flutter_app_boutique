@@ -12,9 +12,8 @@ class ProductItem extends StatelessWidget {
   // const ProductItem({required this.id,required this.title,required this.imageUrl,required Key key }):super(key :key);
   @override
   Widget build(BuildContext context) {
-
-    final product =Provider.of<Product>(context);
-    final cart = Provider.of<Cart>(context,listen: false);
+    final product = Provider.of<Product>(context);
+    final cart = Provider.of<Cart>(context, listen: false);
 
     /**
      *  a grid tile work particularly well inside off a grid
@@ -23,42 +22,51 @@ class ProductItem extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: GridTile(
-          child: GestureDetector(
-              onTap: (){
-                Navigator.of(context).pushNamed(ProductDetailScreen.route,arguments: product.id);
-              },
-              child: Image.network(product.imageUrl)
-          ),
+        child: GestureDetector(
+            onTap: () {
+              Navigator.of(context)
+                  .pushNamed(ProductDetailScreen.route, arguments: product.id);
+            },
+            child: Image.network(product.imageUrl)),
         footer: GridTileBar(
           backgroundColor: Colors.black87,
           leading: IconButton(
-            icon: product.isFavorite ? const  Icon(Icons.favorite):const Icon(Icons.favorite_border) ,
+            icon: product.isFavorite
+                ? const Icon(Icons.favorite)
+                : const Icon(Icons.favorite_border),
             onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
               product.toggleIsFavorite();
             },
             color: Theme.of(context).colorScheme.secondary,
           ),
-          title: Text(product.title,textAlign: TextAlign.center,),
+          title: Text(
+            product.title,
+            textAlign: TextAlign.center,
+          ),
           trailing: IconButton(
             icon: const Icon(Icons.shopping_cart),
-            onPressed: (){
-              cart.addItem(productId: product.id, price: product.price, title: product.title);
-              ScaffoldMessenger.of(context).showSnackBar( SnackBar(
-                  content: const Text("item added"),
-                  duration: const Duration(seconds: 2),
-                  action: SnackBarAction(label: "undo", onPressed: (){
+            onPressed: () {
+              cart.addItem(
+                  productId: product.id,
+                  price: product.price,
+                  title: product.title);
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: const Text("item added"),
+                duration: const Duration(seconds: 2),
+                action: SnackBarAction(
+                    label: "undo",
+                    onPressed: () {
                       cart.undoAddItem(product.id);
-                  }),
+                    }),
               ));
             },
             color: Theme.of(context).colorScheme.secondary,
           ),
-
         ),
       ),
     );
   }
 
-  const ProductItem({required Key key}):super(key: key);
+  const ProductItem({required Key key}) : super(key: key);
 }
