@@ -18,6 +18,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
   final _imageUrlController = TextEditingController();
   final _imageFocus = FocusNode();
   final _form = GlobalKey<FormState>();
+  var isLoading = false;
   bool isNew = false;
   bool added = false;
   var _editedProduct = Product(
@@ -54,8 +55,40 @@ class _EditProductScreenState extends State<EditProductScreen> {
     if(!isValid!) return;
     _form.currentState?.save();
     var products = Provider.of<Products>(context,listen: false);
-    Navigator.of(context).pop();
-    isNew ? products.addProduct(_editedProduct):products.editProduct(_editedProduct);
+
+    if(isNew){
+      products.addProduct(_editedProduct).then((value) {
+            setState(() {
+              isLoading= true;
+            });
+            Navigator.of(context).pop();
+      }).catchError((error){
+           showDialog(context: context, builder: (ctx)=>
+            AlertDialog(
+             title: const Text("Error occurred"),
+             content: Text(error.toString()),
+             actions: [
+               TextButton(onPressed: (){
+                 setState(() {
+
+                   isLoading = false;
+                 });
+                 Navigator.of(context).pop();
+               }, child: const Text("OK"))
+             ],
+           )
+         ).then((value) => Navigator.of(context).pop());
+      }).then((value) => (_){
+        setState(() {
+          isLoading=false;
+          Navigator.of(context).pop();
+        });
+      });
+    }
+    else {
+      products.editProduct(_editedProduct);
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -78,7 +111,9 @@ class _EditProductScreenState extends State<EditProductScreen> {
               icon: const Icon(Icons.save))
         ],
       ),
-      body: Padding(
+      body: isLoading? const Center(
+        child: CircularProgressIndicator(),
+      ): Padding(
         padding: const EdgeInsets.all(60),
         child: Form(
           key: _form,
